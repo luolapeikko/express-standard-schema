@@ -1,6 +1,6 @@
 {
   "name": "@luolapeikko/express-standard-schema",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "ExpressJS Standard Schema Validation Middleware",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
