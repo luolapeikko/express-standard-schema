@@ -1,8 +1,9 @@
 # @luolapeikko/express-standard-schema
 
-ExpressJS Standards Validation Middleware
+ExpressJS [Standard Schema](https://standardschema.dev/) Middleware
 
 - uses ExpressJS error middleware handling and passing ValidateRequestError instance to error middleware.
+- This can be used with Zod, ArkType, Valibot and other Standard Schema supported validation libraries.
 - StandardMiddlewareObject Object builder type for Request validation.
 - StandardRequestInfer and StandardRequestHandlerInfer types to build Request or RequestHandler types from type of StandardMiddlewareObject.
 - Optionally can use TS satisfies to help build schema object.
