@@ -43,26 +43,31 @@ export function validateRequest<Z extends StandardMiddlewareObject>(
 	schema: Z,
 	{replace}: ValidateOptions = {replace: false},
 ): RequestHandler<StandardParamsInfer<Z>, any, StandardBodyInfer<Z>, StandardQueryInfer<Z>> {
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: later
 	return async function (req, _res, next) {
-		if (schema.body) {
-			const res = await validateData(schema.body, req.body, 'body');
-			if (replace) {
-				req.body = res as StandardBodyInfer<Z>;
+		try {
+			if (schema.body) {
+				const res = await validateData(schema.body, req.body, 'body');
+				if (replace) {
+					req.body = res as StandardBodyInfer<Z>;
+				}
 			}
-		}
-		if (schema.params) {
-			const res = await validateData(schema.params, req.params, 'params');
-			if (replace) {
-				req.params = res as StandardParamsInfer<Z>;
+			if (schema.params) {
+				const res = await validateData(schema.params, req.params, 'params');
+				if (replace) {
+					req.params = res as StandardParamsInfer<Z>;
+				}
 			}
-		}
-		if (schema.query) {
-			const res = await validateData(schema.query, req.query, 'query');
-			if (replace) {
-				// patch values to current query object (instance)
-				Object.assign(req.query, res as StandardQueryInfer<Z>);
+			if (schema.query) {
+				const res = await validateData(schema.query, req.query, 'query');
+				if (replace) {
+					// patch values to current query object (instance)
+					Object.assign(req.query, res as StandardQueryInfer<Z>);
+				}
 			}
+			return next();
+		} catch (error) {
+			return next(error);
 		}
-		return next();
 	};
 }
