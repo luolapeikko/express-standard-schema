@@ -32,7 +32,8 @@
     "zod",
     "express",
     "middleware",
-    "validation"
+    "validation",
+    "standard-schema"
   ],
   "author": "mharj",
   "license": "MIT",
