@@ -57,10 +57,10 @@ export type CustomStandardRequest<
   ResBody = any,
   Locals extends Record<string, unknown> = Record<string, unknown>,
 > = CustomRequest<
-  StandardParamsType<T["params"]>,
+  StandardParamsInfer<T>,
   ResBody,
-  StandardBodyType<T["body"]>,
-  StandardSchemaQueryType<T["query"]>,
+  StandardBodyInfer<T>,
+  StandardQueryInfer<T>,
   Locals
 >;
 
