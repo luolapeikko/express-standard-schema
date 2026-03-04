@@ -1,0 +1,31 @@
+{
+  "extends": "@tsconfig/node24/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "sourceRoot": "./src",
+    "types": ["node"],
+    "declaration": true,
+    "removeComments": false,
+    "inlineSources": false,
+    "inlineSourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "importHelpers": false,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "strict": true,
+    "erasableSyntaxOnly": true,
+    "isolatedDeclarations": true
+  },
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"],
+    "out": "../docs",
+    "defaultCategory": "General"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "**/*.spec.ts", "dist", "**/*.test.ts", "**/*.test-d.ts", "expressHelpers.ts"]
+}

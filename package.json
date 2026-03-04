@@ -1,0 +1,59 @@
+{
+  "name": "@luolapeikko/express-standard-schema",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
+    },
+    "default": "./dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --format cjs,esm --dts --clean",
+    "prepublishOnly": "npm run build",
+    "test": "vitest test --typecheck --run --no-isolate --coverage",
+    "coverage": "vitest test --run --no-isolate --reporter=dot --coverage --coverage.reporter=lcov",
+    "lint": "biome check",
+    "validate": "tsc --noEmit --project tsconfig.test.json"
+  },
+  "repository": "github:luolapeikko/express-standard-schema",
+  "keywords": [
+    "zod",
+    "express",
+    "middleware",
+    "validation"
+  ],
+  "author": "mharj",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.5",
+    "@standard-schema/spec": "^1.1.0",
+    "@tsconfig/node24": "^24.0.4",
+    "@types/express": "^5.0.6",
+    "@types/express-serve-static-core": "^5.1.1",
+    "@types/node": "^25.3.3",
+    "@vitest/coverage-v8": "^4.0.18",
+    "c8": "^11.0.0",
+    "express": "^5.2.1",
+    "tsdown": "^0.20.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@standard-schema/spec": "^1.1.0",
+    "@types/express-serve-static-core": ">= 5.0.0"
+  },
+  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017"
+}
