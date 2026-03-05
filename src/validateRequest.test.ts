@@ -88,12 +88,14 @@ describe('validateRequest', function () {
 		app.post('/query', validateRequest(queryParams), okResponseHandler);
 		app.post('/param', validateRequest(paramParams), okResponseHandler);
 		app.post('/param/:id', validateRequest(paramParams), okResponseHandler);
+		app.post('/all/:id', validateRequest({...queryParams, ...paramParams, ...objectBody}), okResponseHandler);
 
 		app.post('/rstring', validateRequest(stringBody, {replace: true}), okResponseHandler);
 		app.post('/robject', validateRequest(objectBody, {replace: true}), okResponseHandler);
 		app.post('/rquery', validateRequest(queryParams, {replace: true}), okResponseHandler);
 		app.post('/rparam', validateRequest(paramParams, {replace: true}), okResponseHandler);
 		app.post('/rparam/:id', validateRequest(paramParams, {replace: true}), okResponseHandler);
+		app.post('/rall/:id', validateRequest({...queryParams, ...paramParams, ...objectBody}, {replace: true}), okResponseHandler);
 
 		app.use(errorMiddleWare);
 	});
@@ -103,7 +105,7 @@ describe('validateRequest', function () {
 				'string',
 				{method: 'POST', body: JSON.stringify({}), headers},
 				400,
-				`ValidateRequestError:path 'body.' Invalid input: expected string, received object`,
+				`ValidateRequestError:path 'body' Invalid input: expected string, received object`,
 			);
 		});
 		it('should build error from object validation', async function () {
@@ -130,6 +132,14 @@ describe('validateRequest', function () {
 				`ValidateRequestError:path 'params.id' Invalid input: expected string, received undefined`,
 			);
 		});
+		it('should build error from param, query and body validation', async function () {
+			await expectRes(
+				'all/id',
+				{method: 'POST', body: JSON.stringify({}), headers},
+				400,
+				`ValidateRequestError:path 'body.data' Invalid input: expected string, received undefined, \npath 'query.id' Invalid input: expected string, received undefined`,
+			);
+		});
 	});
 	describe('validated', function () {
 		it('should valid response for object', async function () {
@@ -141,6 +151,9 @@ describe('validateRequest', function () {
 		it('should valid response for param', async function () {
 			await expectRes('param/data', {method: 'POST', body: null, headers}, 200, `OK`);
 		});
+		it('should valid response for object, query and param', async function () {
+			await expectRes('all/data?id=data', {method: 'POST', body: JSON.stringify({data: 'data'}), headers}, 200, `OK`);
+		});
 		it('should valid response for object replace', async function () {
 			await expectRes('robject', {method: 'POST', body: JSON.stringify({data: 'data'}), headers}, 200, `OK`);
 		});
@@ -149,6 +162,9 @@ describe('validateRequest', function () {
 		});
 		it('should valid response for param replace', async function () {
 			await expectRes('rparam/data', {method: 'POST', body: null, headers}, 200, `OK`);
+		});
+		it('should valid response for object, query and param replace', async function () {
+			await expectRes('rall/data?id=data', {method: 'POST', body: JSON.stringify({data: 'data'}), headers}, 200, `OK`);
 		});
 	});
 	afterAll(async () => {

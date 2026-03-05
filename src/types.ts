@@ -2,7 +2,7 @@ import type {StandardSchemaV1} from '@standard-schema/spec';
 import type {Request, RequestHandler} from 'express';
 import type {ParamsDictionary, Query} from 'express-serve-static-core';
 
-type StandardSchemaBodyType<T = any> = StandardSchemaV1<unknown, T>;
+type StandardSchemaBodyType<T = unknown> = StandardSchemaV1<unknown, T>;
 
 type StandardSchemaParamsType<T extends ParamsDictionary = ParamsDictionary> = StandardSchemaV1<ParamsDictionary, T>;
 

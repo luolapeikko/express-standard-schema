@@ -2,27 +2,28 @@ import type {StandardSchemaV1} from '@standard-schema/spec';
 import type {RequestHandler} from 'express';
 import type {StandardBodyInfer, StandardMiddlewareObject, StandardParamsInfer, StandardQueryInfer} from './types';
 
-export type ValidateOptions = {
-	/** Replace Request values with validated values */
-	replace?: boolean;
-};
-
-async function validateData<T>(schema: StandardSchemaV1<unknown, T>, data: any, path: string): Promise<T> {
+async function validateData<T>(schema: StandardSchemaV1<unknown, T>, data: unknown, path: string, issues: StandardSchemaV1.Issue[]): Promise<T | undefined> {
 	const res = await schema['~standard'].validate(data);
 	if (res.issues) {
-		throw new ValidateRequestError(res.issues, path);
+		issues.push(...res.issues.map((issue) => ({...issue, path: [path, ...(issue.path ?? [])]})));
+		return undefined;
 	}
 	return res.value;
 }
 
 export class ValidateRequestError extends TypeError {
 	public issues: readonly StandardSchemaV1.Issue[];
-	public constructor(issues: readonly StandardSchemaV1.Issue[], path: string) {
-		super(issues.map((issue) => (issue.path ? `path '${path}.${issue.path.join('.')}' ${issue.message}` : `path: '${path}' ${issue.message}`)).join(', \n'));
+	public constructor(issues: readonly StandardSchemaV1.Issue[]) {
+		super(issues.map((issue) => (issue.path ? `path '${issue.path.join('.')}' ${issue.message}` : `path: '${issue.message}`)).join(', \n'));
 		this.name = 'ValidateRequestError';
 		this.issues = issues;
 	}
 }
+
+export type ValidateOptions = {
+	/** Replace Request values with validated values */
+	replace?: boolean;
+};
 
 /**
  * Validate schema for ExpressJS request
@@ -41,33 +42,36 @@ export class ValidateRequestError extends TypeError {
  */
 export function validateRequest<Z extends StandardMiddlewareObject>(
 	schema: Z,
-	{replace}: ValidateOptions = {replace: false},
+	{replace = false}: ValidateOptions = {},
 ): RequestHandler<StandardParamsInfer<Z>, any, StandardBodyInfer<Z>, StandardQueryInfer<Z>> {
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: later
 	return async function (req, _res, next) {
+		const issues: StandardSchemaV1.Issue[] = [];
 		try {
 			if (schema.body) {
-				const res = await validateData(schema.body, req.body, 'body');
-				if (replace) {
-					req.body = res as StandardBodyInfer<Z>;
+				const body = await validateData(schema.body, req.body, 'body', issues);
+				if (body && replace) {
+					req.body = body as StandardBodyInfer<Z>;
 				}
 			}
 			if (schema.params) {
-				const res = await validateData(schema.params, req.params, 'params');
-				if (replace) {
-					req.params = res as StandardParamsInfer<Z>;
+				const params = await validateData(schema.params, req.params, 'params', issues);
+				if (params && replace) {
+					req.params = params as StandardParamsInfer<Z>;
 				}
 			}
 			if (schema.query) {
-				const res = await validateData(schema.query, req.query, 'query');
-				if (replace) {
-					// patch values to current query object (instance)
-					Object.assign(req.query, res as StandardQueryInfer<Z>);
+				const query = await validateData(schema.query, req.query, 'query', issues);
+				if (query && replace) {
+					Object.assign(req.query, query as StandardQueryInfer<Z>);
 				}
+			}
+			if (issues.length > 0) {
+				return next(new ValidateRequestError(issues));
 			}
 			return next();
 		} catch (error) {
-			return next(error);
+			return next(error); // just safety net for express 4
 		}
 	};
 }
