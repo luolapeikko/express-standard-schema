@@ -1,22 +1,35 @@
 # @luolapeikko/express-standard-schema
 
-ExpressJS [Standard Schema](https://standardschema.dev/) Middleware
+ExpressJS [Standard Schema](https://standardschema.dev/) middleware for request validation.
 
-- uses ExpressJS error middleware handling and passing ValidateRequestError instance to error middleware.
-- This can be used with Zod, ArkType, Valibot and other Standard Schema supported validation libraries.
-- StandardMiddlewareObject Object builder type for Request validation.
-- StandardRequestInfer and StandardRequestHandlerInfer types to build Request or RequestHandler types from type of StandardMiddlewareObject.
-- Optionally can use TS satisfies to help build schema object.
+- Seamlessly integrates with ExpressJS error middleware by passing a `ValidateRequestError` instance.
+- Fully compatible with [Standard Schema](https://standardschema.dev/) libraries like Zod, ArkType, Valibot, and others.
+- Provides `StandardMiddlewareObject`, a structured type for defining request validation schemas.
+- Offers `StandardRequestInfer` and `StandardRequestHandlerInfer` for automatic type inference.
+- Supports the TypeScript `satisfies` operator for improved type safety.
 
-## install
+## Install
 
 ```bash
-npm i @luolapeikko/express-standard-schema
+npm i express @luolapeikko/express-standard-schema
+npm i @types/express @types/express-serve-static-core @standard-schema/spec --save-dev
 ```
 
-## usage
+## Usage
 
 ```typescript
+import { Router, type ErrorRequestHandler } from "express";
+import { z } from "zod";
+import {
+  validateRequest,
+  ValidateRequestError,
+  type StandardMiddlewareObject,
+  type StandardRequestInfer,
+  type StandardRequestHandlerInfer,
+} from "@luolapeikko/express-standard-schema";
+
+const router = Router();
+
 const demoRequestSchema = {
   params: z.object({
     id: z.string(),
@@ -27,37 +40,52 @@ const demoRequestSchema = {
   body: z.object({
     name: z.string().min(3).max(255),
     email: z.string().email(),
-    password: z.string().min(8).max(255),
   }),
 } satisfies StandardMiddlewareObject;
 
-// build RequestHandler type
-type DemoRequestHandler = StandardRequestInfer<typeof demoRequestSchema>;
-// or just Request
-type DemoRequest = StandardRequestHandlerInfer<typeof demoRequestSchema>;
+// Infer the Request type only
+type DemoRequest = StandardRequestInfer<typeof demoRequestSchema>;
 
-// in router
-route.put("/:id", validateRequest(demoRequestSchema), handleDemo);
+// Infer the RequestHandler type
+type DemoRequestHandler = StandardRequestHandlerInfer<typeof demoRequestSchema>;
 
-// in error middleware
-export const errorMiddleWare: ErrorRequestHandler = (err, _req, res, next) => {
+const handleDemo: DemoRequestHandler = (req, res) => {
+  // req.params.id, req.query.filter, and req.body.name are now typed!
+  res.status(200).send("OK");
+};
+
+// Apply validation to a route
+router.put("/user/:id", validateRequest(demoRequestSchema), handleDemo);
+
+// Example Error Middleware
+export const errorMiddleware: ErrorRequestHandler = (err, _req, res, next) => {
   if (err instanceof ValidateRequestError) {
-    res.status(400).send(`ValidateRequestError:${err.message}`);
-    // or build from err.issues
+    res.status(400).send(`Validation Failed: ${err.message}`);
+    // You can also access err.issues for detailed validation errors
+    return;
   }
-  //
+  // handle other errors
 };
 ```
 
-## Extend Request and RequestHandler types with already customized Request type.
+## Advanced type customization
+
+You can extend the inference types to work with your own custom `Request` and `RequestHandler` types for even more flexibility.
 
 ```typescript
-// build Request type which uses CustomRequest and StandardMiddlewareObject
+import type {
+  StandardMiddlewareObject,
+  StandardParamsInfer,
+  StandardBodyInfer,
+  StandardQueryInfer,
+} from "@luolapeikko/express-standard-schema";
+
+// Integrate Standard Schema inference into your custom Request type.
 export type CustomStandardRequest<
   T extends StandardMiddlewareObject,
   ResBody = any,
   Locals extends Record<string, unknown> = Record<string, unknown>,
-> = CustomRequest<
+> = MyBaseRequest<
   StandardParamsInfer<T>,
   ResBody,
   StandardBodyInfer<T>,
@@ -65,7 +93,7 @@ export type CustomStandardRequest<
   Locals
 >;
 
-// type DemoRequest = CustomStandardRequest<typeof demoRequestSchema>;
+type DemoRequest = CustomStandardRequest<typeof demoRequestSchema>;
 
 // build RequestHandler type which uses CustomStandardRequest
 export type CustomStandardRequestHandler<
@@ -78,5 +106,7 @@ export type CustomStandardRequestHandler<
   next: NextFunction,
 ) => void;
 
-// type DemoRequestHandler = CustomStandardRequestHandler<typeof demoRequestSchema>;
+type DemoRequestHandler = CustomStandardRequestHandler<
+  typeof demoRequestSchema
+>;
 ```
