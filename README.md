@@ -1,12 +1,17 @@
 # @luolapeikko/express-standard-schema
 
+[![TypeScript](https://badges.frapsoft.com/typescript/code/typescript.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
+[![npm version](https://badge.fury.io/js/@luolapeikko%2Fexpress-standard-schema.svg)](https://badge.fury.io/js/@luolapeikko%2Fexpress-standard-schema)
+[![Maintainability](https://qlty.sh/gh/luolapeikko/projects/express-standard-schema/maintainability.svg)](https://qlty.sh/gh/luolapeikko/projects/express-standard-schema)
+[![Code Coverage](https://qlty.sh/gh/luolapeikko/projects/express-standard-schema/coverage.svg)](https://qlty.sh/gh/luolapeikko/projects/express-standard-schema)
+[![CI/CD](https://github.com/luolapeikko/express-standard-schema/actions/workflows/main.yml/badge.svg)](https://github.com/luolapeikko/express-standard-schema/actions/workflows/main.yml)
+
 ExpressJS [Standard Schema](https://standardschema.dev/) middleware for request validation.
 
 - Seamlessly integrates with ExpressJS error middleware by passing a `ValidateRequestError` instance.
 - Fully compatible with [Standard Schema](https://standardschema.dev/) libraries like Zod, ArkType, Valibot, and others.
-- Provides `StandardMiddlewareObject`, a structured type for defining request validation schemas.
+- Provides `StandardMiddlewareObject` helper TypeScript type for the `satisfies` operator, a structured type for defining request validation schemas.
 - Offers `StandardRequestInfer` and `StandardRequestHandlerInfer` for automatic type inference.
-- Supports the TypeScript `satisfies` operator for improved type safety.
 
 ## Install
 
