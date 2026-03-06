@@ -98,7 +98,9 @@ export function validateRequest<Z extends StandardMiddlewareObject>(
 			}
 			return next();
 		} catch (error) {
+			/* c8 ignore start */
 			return next(error); // just safety net for express 4
+			/* c8 ignore stop */
 		}
 	};
 }
