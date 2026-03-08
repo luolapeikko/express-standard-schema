@@ -56,11 +56,11 @@ export type StandardQueryInfer<Z extends StandardMiddlewareObject> = Z['query'] 
  * 	}),
  * } satisfies StandardMiddlewareObject;
  */
-export type StandardMiddlewareObject = {
+export type StandardMiddlewareObject = Readonly<{
 	body?: StandardSchemaBodyType;
 	params?: StandardSchemaParamsType;
 	query?: StandardSchemaQueryType;
-};
+}>;
 
 /**
  * Infer ExpressJS RequestHandler type from StandardMiddlewareObject.
@@ -68,6 +68,14 @@ export type StandardMiddlewareObject = {
  * @template ResBody - Response body type
  * @template Locals - Locals type
  * @since 0.0.1
+ * @example
+ * export const validateSchema = {
+ * 	body: z.object({
+ * 		name: z.string().min(1),
+ * 	}),
+ * } satisfies StandardMiddlewareObject;
+ * export type DemoRequestHandler = StandardRequestHandlerInfer<typeof validateSchema>;
+ * // DemoRequestHandler is RequestHandler<ParamsDictionary, any, {name: string}, QueryString.ParsedQs, Record<string, any>>
  */
 export type StandardRequestHandlerInfer<
 	T extends StandardMiddlewareObject,
@@ -81,6 +89,14 @@ export type StandardRequestHandlerInfer<
  * @template ResBody - Response body type
  * @template Locals - Locals type
  * @since 0.0.1
+ * @example
+ * export const validateSchema = {
+ * 	body: z.object({
+ * 		name: z.string().min(1),
+ * 	}),
+ * } satisfies StandardMiddlewareObject;
+ * export type DemoRequest = StandardRequestInfer<typeof validateSchema>;
+ * // DemoRequest is Request<ParamsDictionary, any, {name: string}, QueryString.ParsedQs, Record<string, any>>
  */
 export type StandardRequestInfer<T extends StandardMiddlewareObject, ResBody = any, Locals extends Record<string, any> = Record<string, any>> = Request<
 	StandardParamsInfer<T>,

@@ -1,6 +1,6 @@
 import Express, {type Application, type ErrorRequestHandler, type RequestHandler} from 'express';
 import type {Server} from 'http';
-import {ValidateRequestError} from './validateRequest';
+import {ValidateRequestError} from '../src/ValidateRequestError';
 
 const app = Express();
 
@@ -28,9 +28,9 @@ export function stopExpress(): Promise<void> {
 
 export const errorMiddleWare: ErrorRequestHandler = (err, _req, res, next) => {
 	if (err instanceof ValidateRequestError) {
-		res.status(400).send(`ValidateRequestError:${err.message}`);
+		return res.status(400).send(`ValidateRequestError:${err.message}`);
 	}
-	next();
+	return next();
 };
 
 export const okResponseHandler: RequestHandler = (_req, res) => {

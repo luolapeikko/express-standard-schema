@@ -1,6 +1,6 @@
 import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 import {z} from 'zod';
-import {type StandardMiddlewareObject, validateRequest} from '.';
+import {type StandardMiddlewareObject, validateRequest} from '../src';
 import {errorMiddleWare, okResponseHandler, startExpress, stopExpress} from './expressHelpers';
 
 const headers = {'Content-Type': 'application/json'};

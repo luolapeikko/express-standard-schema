@@ -1,40 +1,26 @@
 import type {StandardSchemaV1} from '@standard-schema/spec';
 import type {RequestHandler} from 'express';
 import type {StandardBodyInfer, StandardMiddlewareObject, StandardParamsInfer, StandardQueryInfer} from './types';
+import {ValidateRequestError} from './ValidateRequestError';
 
-async function validateData<T>(
-	schema: StandardSchemaV1<unknown, T>,
-	data: unknown,
-	path: string,
-	issues: StandardSchemaV1.Issue[],
-): Promise<StandardSchemaV1.Result<T>> {
-	const res = await schema['~standard'].validate(data);
-	if (res.issues) {
-		issues.push(...res.issues.map((issue) => ({...issue, path: [path, ...(issue.path ?? [])]})));
-	}
-	return res;
+function addTargetPath(issues: readonly StandardSchemaV1.Issue[], target: string): StandardSchemaV1.Issue[] {
+	return issues.map((issue) => ({...issue, path: [target, ...(issue.path ?? [])]}));
 }
 
-/**
- * Error thrown when validation fails
- * @since 0.0.1
- * @example
- * export const errorMiddleware: ErrorRequestHandler = (err, _req, res, next) => {
- *   if (err instanceof ValidateRequestError)
- *     res.status(400).send(`Validation Failed: ${err.message}`);
- *     // You can also access err.issues for detailed validation errors
- *     return;
- *   }
- *   // handle other errors
- * };
- */
-export class ValidateRequestError extends TypeError {
-	public issues: readonly StandardSchemaV1.Issue[];
-	public constructor(issues: readonly StandardSchemaV1.Issue[]) {
-		super(issues.map((issue) => (issue.path ? `path '${issue.path.join('.')}' ${issue.message}` : `path: '${issue.message}`)).join(', \n'));
-		this.name = 'ValidateRequestError';
-		this.issues = issues;
+async function validateTarget<T>(
+	schema: StandardSchemaV1<unknown, T> | undefined,
+	data: unknown,
+	target: string,
+	issues: StandardSchemaV1.Issue[],
+): Promise<T | undefined> {
+	if (!schema) {
+		return undefined;
 	}
+	const res = await schema['~standard'].validate(data);
+	if (res.issues) {
+		issues.push(...addTargetPath(res.issues, target));
+	}
+	return res.issues ? undefined : res.value;
 }
 
 /**
@@ -71,30 +57,25 @@ export function validateRequest<Z extends StandardMiddlewareObject>(
 	schema: Z,
 	{replace = false}: ValidateOptions = {},
 ): RequestHandler<StandardParamsInfer<Z>, any, StandardBodyInfer<Z>, StandardQueryInfer<Z>> {
-	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: later
 	return async function (req, _res, next) {
 		const issues: StandardSchemaV1.Issue[] = [];
 		try {
-			if (schema.body) {
-				const result = await validateData(schema.body, req.body, 'body', issues);
-				if (replace && !result.issues) {
-					req.body = result.value as StandardBodyInfer<Z>;
-				}
-			}
-			if (schema.params) {
-				const result = await validateData(schema.params, req.params, 'params', issues);
-				if (replace && !result.issues) {
-					req.params = result.value as StandardParamsInfer<Z>;
-				}
-			}
-			if (schema.query) {
-				const result = await validateData(schema.query, req.query, 'query', issues);
-				if (replace && !result.issues) {
-					Object.assign(req.query, result.value as StandardQueryInfer<Z>);
-				}
-			}
+			const validatedBody = await validateTarget(schema.body, req.body, 'body', issues);
+			const validatedParams = await validateTarget(schema.params, req.params, 'params', issues);
+			const validatedQuery = await validateTarget(schema.query, req.query, 'query', issues);
 			if (issues.length > 0) {
 				return next(new ValidateRequestError(issues));
+			}
+			if (replace) {
+				if (validatedBody !== undefined) {
+					req.body = validatedBody as StandardBodyInfer<Z>;
+				}
+				if (validatedParams !== undefined) {
+					req.params = validatedParams as StandardParamsInfer<Z>;
+				}
+				if (validatedQuery !== undefined) {
+					Object.assign(req.query, validatedQuery as StandardQueryInfer<Z>);
+				}
 			}
 			return next();
 		} catch (error) {

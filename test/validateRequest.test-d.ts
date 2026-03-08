@@ -2,7 +2,7 @@ import type {Request} from 'express';
 import type {ParamsDictionary, Query} from 'express-serve-static-core';
 import {describe, expectTypeOf, it} from 'vitest';
 import {z} from 'zod';
-import type {StandardMiddlewareObject, StandardRequestHandlerInfer, StandardRequestInfer} from './types';
+import type {StandardMiddlewareObject, StandardRequestHandlerInfer, StandardRequestInfer} from '../src/types';
 
 const bodyObject = {
 	body: z.object({
