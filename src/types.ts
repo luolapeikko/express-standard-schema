@@ -21,7 +21,9 @@ type StandardOutputInfer<T> = T extends StandardSchemaV1<infer _, infer V> ? V :
  * @template Z - StandardMiddlewareObject
  * @since 0.0.10
  */
-export type StandardParamsOutInfer<Z extends StandardMiddlewareObject> = Z['params'] extends StandardSchemaV1 ? StandardOutputInfer<Z['params']> : ParamsDictionary;
+export type StandardParamsOutInfer<Z extends StandardMiddlewareObject> = Z['params'] extends StandardSchemaV1
+	? StandardOutputInfer<Z['params']>
+	: ParamsDictionary;
 
 /**
  * Infer ExpressJS Output Body type from StandardMiddlewareObject.
