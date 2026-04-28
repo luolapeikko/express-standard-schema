@@ -6,13 +6,13 @@ import type {ParamsDictionary, Query} from 'express-serve-static-core';
 type StandardSchemaBodyType<T = unknown> = StandardSchemaV1<unknown, T>;
 
 /** Base type for Standard Schema Params */
-type StandardSchemaParamsType<T extends ParamsDictionary = ParamsDictionary> = StandardSchemaV1<ParamsDictionary, T>;
+type StandardSchemaParamsType<T = unknown> = StandardSchemaV1<ParamsDictionary, T>;
 
 /** Base type for Standard Schema Query params */
-type StandardSchemaQueryType<T extends Query = Query> = StandardSchemaV1<Query, T>;
+type StandardSchemaQueryType<T = unknown> = StandardSchemaV1<Query, T>;
 
 /** Infer output type from StandardSchemaV1 */
-type StandardOutputInfer<T> = T extends StandardSchemaV1<infer _, infer U> ? U : never;
+type StandardInputInfer<T> = T extends StandardSchemaV1<infer U, infer _> ? U : never;
 
 /**
  * Infer ExpressJS Params type from StandardMiddlewareObject.
@@ -23,7 +23,7 @@ type StandardOutputInfer<T> = T extends StandardSchemaV1<infer _, infer U> ? U :
  * type DemoParams = StandardParamsInfer<typeof paramsSchema>; // {id: string}
  */
 export type StandardParamsInfer<Z extends StandardMiddlewareObject> = Z['params'] extends StandardSchemaParamsType
-	? StandardOutputInfer<Z['params']>
+	? StandardInputInfer<Z['params']>
 	: ParamsDictionary;
 
 /**
@@ -34,7 +34,7 @@ export type StandardParamsInfer<Z extends StandardMiddlewareObject> = Z['params'
  * const bodySchema = {body: z.object({name: z.string()})} satisfies StandardMiddlewareObject;
  * type DemoBody = StandardBodyInfer<typeof bodySchema>; // {name: string}
  */
-export type StandardBodyInfer<Z extends StandardMiddlewareObject> = Z['body'] extends StandardSchemaBodyType ? StandardOutputInfer<Z['body']> : unknown;
+export type StandardBodyInfer<Z extends StandardMiddlewareObject> = Z['body'] extends StandardSchemaBodyType ? StandardInputInfer<Z['body']> : unknown;
 
 /**
  * Infer ExpressJS Query type from StandardMiddlewareObject.
@@ -44,7 +44,7 @@ export type StandardBodyInfer<Z extends StandardMiddlewareObject> = Z['body'] ex
  * const querySchema = {query: z.object({name: z.string()})} satisfies StandardMiddlewareObject;
  * type DemoQuery = StandardQueryInfer<typeof querySchema>; // {name: string}
  */
-export type StandardQueryInfer<Z extends StandardMiddlewareObject> = Z['query'] extends StandardSchemaQueryType ? StandardOutputInfer<Z['query']> : Query;
+export type StandardQueryInfer<Z extends StandardMiddlewareObject> = Z['query'] extends StandardSchemaQueryType ? StandardInputInfer<Z['query']> : Query;
 
 /**
  * Validate schema for ExpressJS request

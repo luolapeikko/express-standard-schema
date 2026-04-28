@@ -1,6 +1,6 @@
 import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 import {z} from 'zod';
-import {type StandardMiddlewareObject, validateRequest} from '../src';
+import {type StandardMiddlewareObject, validateRequest, validateRequestHandler} from '../src';
 import {errorMiddleWare, okResponseHandler, startExpress, stopExpress} from './expressHelpers';
 
 const headers = {'Content-Type': 'application/json'};
@@ -96,7 +96,20 @@ describe('validateRequest', function () {
 		app.post('/rparam', validateRequest(paramParams, {replace: true}), okResponseHandler);
 		app.post('/rparam/:id', validateRequest(paramParams, {replace: true}), okResponseHandler);
 		app.post('/rall/:id', validateRequest({...queryParams, ...paramParams, ...objectBody}, {replace: true}), okResponseHandler);
-
+		app.get(
+			'/handle/:id',
+			validateRequestHandler(
+				{
+					params: z.object({id: z.string().transform((v) => Number(v))}),
+					query: z.object({
+						id: z.string().transform((v) => Number(v)),
+					}),
+				},
+				(req, res) => {
+					res.status(200).json({paramParams: req.params, queryParams: req.query});
+				},
+			),
+		);
 		app.use(errorMiddleWare);
 	});
 	describe('errors', function () {
@@ -139,6 +152,24 @@ describe('validateRequest', function () {
 				400,
 				`ValidateRequestError:path 'body.data' Invalid input: expected string, received undefined, \npath 'query.id' Invalid input: expected string, received undefined`,
 			);
+		});
+	});
+	describe('handleValidateRequest', function () {
+		it('should transform params and query id strings to numbers', async function () {
+			const uri = new URL(`${url}/handle/42?id=7`);
+			const res = await fetch(uri, {method: 'GET'});
+			expect(res.status).toBe(200);
+			expect(await res.json()).toStrictEqual({paramParams: {id: 42}, queryParams: {id: 7}});
+		});
+		it('should return error when query id is missing', async function () {
+			await expectRes('handle/42', {method: 'GET'}, 400, `ValidateRequestError:path 'query.id' Invalid input: expected string, received undefined`);
+		});
+		it('should return error when params id is missing and query id present', async function () {
+			const uri = new URL(`${url}/handle/`);
+			uri.searchParams.set('id', '7');
+			const res = await fetch(uri, {method: 'GET'});
+			// Express won't match /handle/:id without a segment, so 404 is expected
+			expect(res.status).toBe(404);
 		});
 	});
 	describe('validated', function () {
