@@ -151,7 +151,8 @@ export function validateRequestHandler<
 			if (validatedQuery !== undefined) {
 				Object.defineProperty(req, 'query', {value: validatedQuery, writable: true, configurable: true, enumerable: true});
 			}
-			return await handle(req as Request<StandardParamsOutInfer<Z>, ResBody, StandardBodyOutInfer<Z>, StandardQueryOutInfer<Z>, Locals>, res, next);
+			await handle(req as Request<StandardParamsOutInfer<Z>, ResBody, StandardBodyOutInfer<Z>, StandardQueryOutInfer<Z>, Locals>, res, next);
+			return next();
 		} catch (error) {
 			/* c8 ignore start */
 			return next(error); // just safety net for express 4
