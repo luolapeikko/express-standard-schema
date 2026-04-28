@@ -1,6 +1,14 @@
 import type {StandardSchemaV1} from '@standard-schema/spec';
 import type {Request, RequestHandler} from 'express';
-import type {StandardBodyInfer, StandardMiddlewareObject, StandardParamsInfer, StandardQueryInfer} from './types';
+import type {
+	StandardBodyInfer,
+	StandardBodyOutInfer,
+	StandardMiddlewareObject,
+	StandardParamsInfer,
+	StandardParamsOutInfer,
+	StandardQueryInfer,
+	StandardQueryOutInfer,
+} from './types';
 import {ValidateRequestError} from './ValidateRequestError';
 
 function addTargetPath(issues: readonly StandardSchemaV1.Issue[], target: string): StandardSchemaV1.Issue[] {
@@ -87,21 +95,12 @@ export function validateRequest<
 	};
 }
 
-type StandardOutputInfer<T> = T extends StandardSchemaV1<infer _, infer V> ? V : never;
-type StandardParamsOutInfer<Z extends StandardMiddlewareObject> = Z['params'] extends StandardSchemaV1 ? StandardOutputInfer<Z['params']> : unknown;
-type StandardBodyOutInfer<Z extends StandardMiddlewareObject> = Z['body'] extends StandardSchemaV1 ? StandardOutputInfer<Z['body']> : unknown;
-type StandardQueryOutInfer<Z extends StandardMiddlewareObject> = Z['query'] extends StandardSchemaV1 ? StandardOutputInfer<Z['query']> : unknown;
-
-export type ValidatedOutputRequestHandler<
-	ResBody = any,
-	Locals extends Record<string, any> = Record<string, any>,
-	Z extends StandardMiddlewareObject = StandardMiddlewareObject,
-> = RequestHandler<StandardParamsOutInfer<Z>, ResBody, StandardBodyOutInfer<Z>, StandardQueryOutInfer<Z>, Locals>;
-
 /**
  * Validate schema for ExpressJS request and handle the request with validated (and transformed) output type.
- * @template Z - StandardMiddlewareObject
  * @template ResBody - Response body type
+ * @template Locals - Locals type
+ * @template Z - StandardMiddlewareObject
+ * @template RH - RequestHandler with validated output types
  * @param schema - Schema to validate
  * @param handle - Request handler to execute after validation
  * @returns {RequestHandler<StandardParamsInfer<Z>, ResBody, StandardBodyInfer<Z>, StandardQueryInfer<Z>, Locals>} RequestHandler
@@ -126,10 +125,14 @@ export function validateRequestHandler<
 	ResBody = any,
 	Locals extends Record<string, any> = Record<string, any>,
 	Z extends StandardMiddlewareObject = StandardMiddlewareObject,
->(
-	schema: Z,
-	handle: ValidatedOutputRequestHandler<ResBody, Locals, Z>,
-): RequestHandler<StandardParamsInfer<Z>, ResBody, StandardBodyInfer<Z>, StandardQueryInfer<Z>, Locals> {
+	RH extends RequestHandler<StandardParamsOutInfer<Z>, ResBody, StandardBodyOutInfer<Z>, StandardQueryOutInfer<Z>, Locals> = RequestHandler<
+		StandardParamsOutInfer<Z>,
+		ResBody,
+		StandardBodyOutInfer<Z>,
+		StandardQueryOutInfer<Z>,
+		Locals
+	>,
+>(schema: Z, handle: RH): RequestHandler<StandardParamsInfer<Z>, ResBody, StandardBodyInfer<Z>, StandardQueryInfer<Z>, Locals> {
 	return async function (req, res, next) {
 		const issues: StandardSchemaV1.Issue[] = [];
 		try {

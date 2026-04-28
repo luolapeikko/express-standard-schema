@@ -96,7 +96,7 @@ describe('validateRequest', function () {
 		app.post('/rparam', validateRequest(paramParams, {replace: true}), okResponseHandler);
 		app.post('/rparam/:id', validateRequest(paramParams, {replace: true}), okResponseHandler);
 		app.post('/rall/:id', validateRequest({...queryParams, ...paramParams, ...objectBody}, {replace: true}), okResponseHandler);
-		app.get(
+		app.post(
 			'/handle/:id',
 			validateRequestHandler(
 				{
@@ -104,6 +104,11 @@ describe('validateRequest', function () {
 					query: z.object({
 						id: z.string().transform((v) => Number(v)),
 					}),
+					body: z
+						.object({
+							data: z.string(),
+						})
+						.optional(),
 				},
 				(req, res) => {
 					res.status(200).json({paramParams: req.params, queryParams: req.query});
@@ -157,17 +162,22 @@ describe('validateRequest', function () {
 	describe('handleValidateRequest', function () {
 		it('should transform params and query id strings to numbers', async function () {
 			const uri = new URL(`${url}/handle/42?id=7`);
-			const res = await fetch(uri, {method: 'GET'});
+			const res = await fetch(uri, {method: 'POST', body: JSON.stringify({data: 'data'}), headers});
 			expect(res.status).toBe(200);
 			expect(await res.json()).toStrictEqual({paramParams: {id: 42}, queryParams: {id: 7}});
 		});
 		it('should return error when query id is missing', async function () {
-			await expectRes('handle/42', {method: 'GET'}, 400, `ValidateRequestError:path 'query.id' Invalid input: expected string, received undefined`);
+			await expectRes(
+				'handle/42',
+				{method: 'POST', body: JSON.stringify({data: 'data'}), headers},
+				400,
+				`ValidateRequestError:path 'query.id' Invalid input: expected string, received undefined`,
+			);
 		});
 		it('should return error when params id is missing and query id present', async function () {
 			const uri = new URL(`${url}/handle/`);
 			uri.searchParams.set('id', '7');
-			const res = await fetch(uri, {method: 'GET'});
+			const res = await fetch(uri, {method: 'POST', body: JSON.stringify({data: 'data'}), headers});
 			// Express won't match /handle/:id without a segment, so 404 is expected
 			expect(res.status).toBe(404);
 		});

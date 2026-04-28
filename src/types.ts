@@ -14,6 +14,42 @@ type StandardSchemaQueryType<T = unknown> = StandardSchemaV1<Query, T>;
 /** Infer output type from StandardSchemaV1 */
 type StandardInputInfer<T> = T extends StandardSchemaV1<infer U, infer _> ? U : never;
 
+type StandardOutputInfer<T> = T extends StandardSchemaV1<infer _, infer V> ? V : never;
+
+/**
+ * Infer ExpressJS Output Params type from StandardMiddlewareObject.
+ * @template Z - StandardMiddlewareObject
+ * @since 0.0.10
+ */
+export type StandardParamsOutInfer<Z extends StandardMiddlewareObject> = Z['params'] extends StandardSchemaV1 ? StandardOutputInfer<Z['params']> : unknown;
+
+/**
+ * Infer ExpressJS Output Body type from StandardMiddlewareObject.
+ * @template Z - StandardMiddlewareObject
+ * @since 0.0.10
+ */
+export type StandardBodyOutInfer<Z extends StandardMiddlewareObject> = Z['body'] extends StandardSchemaV1 ? StandardOutputInfer<Z['body']> : unknown;
+
+/**
+ * Infer ExpressJS Output Query type from StandardMiddlewareObject.
+ * @template Z - StandardMiddlewareObject
+ * @since 0.0.10
+ */
+export type StandardQueryOutInfer<Z extends StandardMiddlewareObject> = Z['query'] extends StandardSchemaV1 ? StandardOutputInfer<Z['query']> : unknown;
+
+/**
+ * Infer ExpressJS RequestHandler type with validated output type from StandardMiddlewareObject.
+ * @template Z - StandardMiddlewareObject
+ * @template ResBody - Response body type
+ * @template Locals - Locals type
+ * @since 0.0.10
+ */
+export type ValidatedOutputRequestHandler<
+	ResBody = any,
+	Locals extends Record<string, any> = Record<string, any>,
+	Z extends StandardMiddlewareObject = StandardMiddlewareObject,
+> = RequestHandler<StandardParamsOutInfer<Z>, ResBody, StandardBodyOutInfer<Z>, StandardQueryOutInfer<Z>, Locals>;
+
 /**
  * Infer ExpressJS Params type from StandardMiddlewareObject.
  * @template Z - StandardMiddlewareObject
