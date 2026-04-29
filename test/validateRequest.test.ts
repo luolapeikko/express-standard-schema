@@ -100,9 +100,9 @@ describe('validateRequest', function () {
 			'/handle/:id',
 			validateRequestHandler(
 				{
-					params: z.object({id: z.string().transform((v) => Number(v))}),
+					params: z.object({id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive())}),
 					query: z.object({
-						id: z.string().transform((v) => Number(v)),
+						id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive()),
 					}),
 					body: z
 						.object({
@@ -114,6 +114,71 @@ describe('validateRequest', function () {
 					res.status(200).json({paramParams: req.params, queryParams: req.query});
 				},
 			),
+		);
+		app.post(
+			'/throws/:id',
+			validateRequestHandler(
+				{
+					params: z.object({id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive())}),
+					query: z.object({
+						id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive()),
+					}),
+					body: z
+						.object({
+							data: z.string(),
+						})
+						.optional(),
+				},
+				(_req, _res) => {
+					throw new Error('Test error');
+				},
+			),
+		);
+		app.post(
+			'/nexterror/:id',
+			validateRequestHandler(
+				{
+					params: z.object({id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive())}),
+					query: z.object({
+						id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive()),
+					}),
+					body: z
+						.object({
+							data: z.string(),
+						})
+						.optional(),
+				},
+				(_req, _res, next) => {
+					next(new Error('Test error'));
+				},
+			),
+		);
+		app.post(
+			'/dualerr/:id',
+			validateRequestHandler(
+				{
+					params: z.object({id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive())}),
+					query: z.object({
+						id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive()),
+					}),
+					body: z
+						.object({
+							data: z.string(),
+						})
+						.optional(),
+				},
+				(_req, _res, next) => {
+					const err = new Error('Test error');
+					next(err);
+					throw err;
+				},
+			),
+		);
+		app.post(
+			'/clean',
+			validateRequestHandler({}, (_req, res) => {
+				res.end();
+			}),
 		);
 		app.use(errorMiddleWare);
 	});
@@ -174,12 +239,36 @@ describe('validateRequest', function () {
 				`ValidateRequestError:path 'query.id' Invalid input: expected string, received undefined`,
 			);
 		});
+		it('should return error when params id is invalid', async function () {
+			await expectRes(
+				'handle/abc?id=7',
+				{method: 'POST', body: JSON.stringify({data: 'data'}), headers},
+				400,
+				`ValidateRequestError:path 'params.id' Invalid number string`,
+			);
+		});
 		it('should return error when params id is missing and query id present', async function () {
 			const uri = new URL(`${url}/handle/`);
 			uri.searchParams.set('id', '7');
 			const res = await fetch(uri, {method: 'POST', body: JSON.stringify({data: 'data'}), headers});
 			// Express won't match /handle/:id without a segment, so 404 is expected
 			expect(res.status).toBe(404);
+		});
+	});
+	describe('handleValidateRequest throws', function () {
+		it('should return error when new throw', async function () {
+			await expectRes('throws/7?id=7', {method: 'POST', body: JSON.stringify({data: 'data'}), headers}, 500, `Error:Test error`);
+		});
+		it('should return error when next(err) is called', async function () {
+			await expectRes('nexterror/7?id=7', {method: 'POST', body: JSON.stringify({data: 'data'}), headers}, 500, `Error:Test error`);
+		});
+		it('should return error when both new throw and next(err) are called', async function () {
+			await expectRes('dualerr/7?id=7', {method: 'POST', body: JSON.stringify({data: 'data'}), headers}, 500, `Error:Test error`);
+		});
+	});
+	describe('handleValidateRequest clean', function () {
+		it('should return 200', async function () {
+			await expectRes('clean', {method: 'POST', body: JSON.stringify({data: 'data'}), headers}, 200, ``);
 		});
 	});
 	describe('validated', function () {

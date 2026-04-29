@@ -110,9 +110,9 @@ export function validateRequest<
  *   '/handle/:id',
  *   validateRequestHandler(
  *     {
- *       params: z.object({id: z.string().transform((v) => Number(v))}),
+ *       params: z.object({id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number)}),
  *       query: z.object({
- *         id: z.string().transform((v) => Number(v)),
+ *         id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number),
  *       }),
  *     },
  *     (req, res, next) => {
@@ -133,7 +133,7 @@ export function validateRequestHandler<
 		Locals
 	>,
 >(schema: Z, handle: RH): RequestHandler<StandardParamsInfer<Z>, ResBody, StandardBodyInfer<Z>, StandardQueryInfer<Z>, Locals> {
-	return async function (req, res, next) {
+	return async function (req, res, next): Promise<void> {
 		const issues: StandardSchemaV1.Issue[] = [];
 		try {
 			const validatedBody = await validateTarget(schema.body, req.body, 'body', issues);
@@ -152,11 +152,11 @@ export function validateRequestHandler<
 				Object.defineProperty(req, 'query', {value: validatedQuery, writable: true, configurable: true, enumerable: true});
 			}
 			await handle(req as Request<StandardParamsOutInfer<Z>, ResBody, StandardBodyOutInfer<Z>, StandardQueryOutInfer<Z>, Locals>, res, next);
-			return next();
 		} catch (error) {
-			/* c8 ignore start */
-			return next(error); // just safety net for express 4
-			/* c8 ignore stop */
+			if (res.headersSent) {
+				return;
+			}
+			next(error);
 		}
 	};
 }
