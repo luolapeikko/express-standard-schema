@@ -26,26 +26,26 @@ npm i @types/express @types/express-serve-static-core @standard-schema/spec --sa
 import { Router, type ErrorRequestHandler } from "express";
 import { z } from "zod";
 import {
-  validateRequest,
-  ValidateRequestError,
-  type StandardMiddlewareObject,
-  type StandardRequestInfer,
-  type StandardRequestHandlerInfer,
+	validateRequest,
+	ValidateRequestError,
+	type StandardMiddlewareObject,
+	type StandardRequestInfer,
+	type StandardRequestHandlerInfer,
 } from "@luolapeikko/express-standard-schema";
 
 const router = Router();
 
 const demoRequestSchema = {
-  params: z.object({
-    id: z.string(),
-  }),
-  query: z.object({
-    filter: z.string().optional(),
-  }),
-  body: z.object({
-    name: z.string().min(3).max(255),
-    email: z.string().email(),
-  }),
+	params: z.object({
+		id: z.string(),
+	}),
+	query: z.object({
+		filter: z.string().optional(),
+	}),
+	body: z.object({
+		name: z.string().min(3).max(255),
+		email: z.string().email(),
+	}),
 } satisfies StandardMiddlewareObject;
 
 // Infer the Request type only
@@ -55,8 +55,8 @@ type DemoRequest = StandardRequestInfer<typeof demoRequestSchema>;
 type DemoRequestHandler = StandardRequestHandlerInfer<typeof demoRequestSchema>;
 
 const handleDemo: DemoRequestHandler = (req, res) => {
-  // req.params.id, req.query.filter, and req.body.name are now typed!
-  res.status(200).send("OK");
+	// req.params.id, req.query.filter, and req.body.name are now typed!
+	res.status(200).send("OK");
 };
 
 // Apply validation to a route
@@ -64,14 +64,36 @@ router.put("/user/:id", validateRequest(demoRequestSchema), handleDemo);
 
 // Example Error Middleware
 export const errorMiddleware: ErrorRequestHandler = (err, _req, res, next) => {
-  if (err instanceof ValidateRequestError) {
-    res.status(400).send(`Validation Failed: ${err.message}`);
-    // You can also access err.issues for detailed validation errors
-    return;
-  }
-  // handle other errors
+	if (err instanceof ValidateRequestError) {
+		res.status(400).send(`Validation Failed: ${err.message}`);
+		// You can also access err.issues for detailed validation errors
+		return;
+	}
+	// handle other errors
 };
 ```
+
+## Advanced request handler setup
+
+```typescript
+app.post(
+  '/handle/:id',
+  validateRequestHandler(
+    {
+      params: z.object({id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive())}),
+      query: z.object({
+        id: z.string().regex(/^\d+$/, 'Invalid number string').transform(Number).pipe(z.number().int().positive()),
+      }),
+    },
+    (req, res, next) => {
+      res.params.id; // inferred as number
+      res.query.id; // inferred as number
+      // ...
+    },
+  ),
+);
+```
+
 
 ## Advanced type customization
 
@@ -114,4 +136,4 @@ export type CustomStandardRequestHandler<
 type DemoRequestHandler = CustomStandardRequestHandler<
   typeof demoRequestSchema
 >;
-```
+````
