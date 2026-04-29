@@ -21,6 +21,7 @@
     "dist"
   ],
   "scripts": {
+    "prepare": "lefthook install",
     "build": "tsdown src/index.ts --format cjs,esm --dts --clean",
     "prepublishOnly": "npm run build",
     "test": "vitest test --typecheck --run --no-isolate --coverage",
@@ -50,6 +51,7 @@
     "@vitest/coverage-v8": "^4.1.5",
     "c8": "^11.0.0",
     "express": "^5.2.1",
+    "lefthook": "^2.1.6",
     "tsdown": "^0.21.10",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",

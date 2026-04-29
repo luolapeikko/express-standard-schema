@@ -30,7 +30,7 @@ export const errorMiddleWare: ErrorRequestHandler = (err, _req, res, next) => {
 	if (err instanceof ValidateRequestError) {
 		return res.status(400).send(`ValidateRequestError:${err.message}`);
 	}
-	if(err instanceof Error) {
+	if (err instanceof Error) {
 		return res.status(500).send(`${err.name}:${err.message}`);
 	}
 	return next();
